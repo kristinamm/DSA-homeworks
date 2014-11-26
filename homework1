@@ -1,0 +1,103 @@
+/**
+ *
+ * @author Kristina Mileva
+ */
+import java.io.*;
+import java.util.LinkedList;
+
+public class FileEncoder61674 implements FileEncoder {
+
+    // FileSize max = 300kB, for any case lets assume 320kB
+    private boolean[] numberIsNotPrime = new boolean[327680];
+    private long currentFileLength = 0;
+
+    @Override
+    public void encode(String sourceFile, String destinationFile, LinkedList<Character> key) {
+        try {
+            FileInputStream inputFile = new FileInputStream(sourceFile);
+            FileOutputStream outputFile = new FileOutputStream(destinationFile);
+            File inFile = new File(sourceFile);
+            long fileLength;
+            int currentNumber;
+             // FileSize max = 300kB, for any case lets assume 320kB
+
+            //Init special cases:
+            numberIsNotPrime[0] = true;
+
+            // Time to find all primes by Sieve of Eratosthenes
+            // Get the total number of numbers ( one Byte == one number )
+            fileLength = inFile.length();
+            if (fileLength != currentFileLength) {
+                currentFileLength = fileLength;
+                // From number two to the currentNum^2 <= the number of numbers - there is no point
+                // in going further
+                for (int currentNum = 2; currentNum * currentNum <= fileLength; currentNum++) {
+                    if (numberIsNotPrime[currentNum] == false) {
+                        for (int offsetFactor = currentNum; offsetFactor * currentNum < fileLength; offsetFactor++) {
+                            numberIsNotPrime[offsetFactor * currentNum] = true;
+                        }
+                    }
+                }
+            }
+
+            // Use the prime numbers map from above to encrypt the file
+            for (int i = 0; i < fileLength; i++) {
+
+                currentNumber = inputFile.read();
+
+                if (numberIsNotPrime[i]) {
+                    outputFile.write(key.get(currentNumber));
+                } else {
+                    outputFile.write(currentNumber);
+                }
+            }
+
+            inputFile.close();
+            outputFile.close();
+        } catch (IOException e) {
+            //TODO: Some ErrorMessage
+        }
+
+    }
+
+    @Override
+    public void decode(String encodedFile, String destinationFile, LinkedList<Character> key) {
+        try {
+            FileInputStream inputFile = new FileInputStream(encodedFile);
+            FileOutputStream outputFile = new FileOutputStream(destinationFile);
+            File inFile = new File(encodedFile);
+            long fileLength;
+            int currentNumber;
+
+            fileLength = inFile.length();
+            if (fileLength != currentFileLength) {
+                currentFileLength = fileLength;
+                // From number two to the currentNum^2 <= the number of numbers - there is no point
+                // in going further
+                for (int currentNum = 2; currentNum * currentNum <= fileLength; currentNum++) {
+                    if (numberIsNotPrime[currentNum] == false) {
+                        for (int offsetFactor = currentNum; offsetFactor * currentNum < fileLength; offsetFactor++) {
+                            numberIsNotPrime[offsetFactor * currentNum] = true;
+                        }
+                    }
+                }
+            }
+
+            for (int i = 0; i < fileLength; i++) {
+                currentNumber = inputFile.read();
+
+                if (numberIsNotPrime[i]) {
+                    outputFile.write(key.indexOf((char) currentNumber));
+                } else {
+                    outputFile.write(currentNumber);
+                }
+            }
+
+            inputFile.close();
+            outputFile.close();
+        } catch (IOException e) {
+            //TODO: Some ErrorMessage
+        }
+    }
+
+}
